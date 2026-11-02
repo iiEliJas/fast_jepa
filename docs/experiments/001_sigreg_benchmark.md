@@ -10,7 +10,7 @@ Date: 2026-11-02
 
 ## SIGReg forward latency (ms)
 
-| N | ours | official |
+| N | fj python | official |
 |---|------|----------|
 | 256 | 6.285 | 7.136 |
 | 512 | 11.690 | 13.502 |
@@ -18,7 +18,7 @@ Date: 2026-11-02
 
 ## SIGReg forward+backward latency (ms)
 
-| N | ours | official |
+| N | fj python | official |
 |---|------|----------|
 | 256 | 18.563 | 24.843 |
 | 512 | 37.610 | 45.998 |
@@ -33,7 +33,7 @@ Date: 2026-11-02
 
 ## Training step comparison (V=2, B=8, 32x32, 2-layer ViT)
 
-| metric | ours | official SIGReg |
+| metric | fj python | official SIGReg |
 |--------|------|-----------------|
 | throughput (imgs/s) | 367.3 | 576.6 |
 | step time (ms) | 43.57 | 27.75 |
