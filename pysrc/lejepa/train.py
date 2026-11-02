@@ -33,4 +33,3 @@ def train_one_epoch(model, projector, sigreg, optimizer, loader, device, lamb=0.
         loss.backward()
         optimizer.step()
     return loss.item()
-"

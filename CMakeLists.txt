@@ -36,4 +36,3 @@ include_directories(csrc tests)
 # Placeholder: add sources as implemented.
 # add_executable(fastjepa csrc/main.c)
 # target_link_libraries(fastjepa m)
-"
