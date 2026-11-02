@@ -3,7 +3,16 @@ from torch import nn
 
 
 class LeJEPAEncoder(nn.Module):
-    def __init__(self, img_size=128, patch_size=8, embed_dim=384, depth=12, num_heads=6):
+    def __init__(
+        self,
+        img_size=128,
+        patch_size=8,
+        embed_dim=384,
+        depth=12,
+        num_heads=6,
+        drop_path_rate=0.1,
+        dynamic_img_size=True,
+    ):
         super().__init__()
         self.vit = timm.create_model(
             "vit_small_patch8_224",
@@ -14,6 +23,8 @@ class LeJEPAEncoder(nn.Module):
             depth=depth,
             num_heads=num_heads,
             num_classes=0,
+            drop_path_rate=drop_path_rate,
+            dynamic_img_size=dynamic_img_size,
         )
         self.proj_head = nn.Linear(embed_dim, 512)
 

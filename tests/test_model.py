@@ -18,6 +18,10 @@ def test_model_forward():
     z = proj(e)
     assert e.shape == (4, 512)
     assert z.shape == (4, 16)
+    # proj_head always outputs 512, so assert the timm overrides directly.
+    assert enc.vit.embed_dim == 64
+    assert len(enc.vit.blocks) == 2
+    assert tuple(enc.vit.patch_embed.patch_size) == (4, 4)
 
 
 def test_loss_and_diagnostics():

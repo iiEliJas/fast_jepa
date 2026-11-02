@@ -21,8 +21,10 @@ class SlicedEppsPulley(nn.Module):
         self.register_buffer("weights", weights * phi)
         self.register_buffer("phi", phi)
 
-    def forward(self, x, A=None):
+    def forward(self, x, A=None, return_per_slice=False):
         # x: (N, K) or (V, N, K). Returns a scalar averaged over views and slices.
+        # return_per_slice=True returns the (S,) statistic averaged over views,
+        # which the parity tests compare against the official EppsPulley.
         if x.dim() == 2:
             x = x.unsqueeze(0)
         elif x.dim() != 3:
@@ -57,4 +59,7 @@ class SlicedEppsPulley(nn.Module):
         sin_mean = torch.sin(x_t).mean(dim=1)
         err = (cos_mean - phi).square() + sin_mean.square()
         per_view = (err @ weights) * N  # (V, S)
-        return per_view.mean()  # mean over views and slices
+        per_slice = per_view.mean(dim=0)  # (S,), mean over views
+        if return_per_slice:
+            return per_slice
+        return per_slice.mean()  # mean over views and slices
