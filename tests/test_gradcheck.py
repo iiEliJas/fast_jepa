@@ -10,9 +10,6 @@ from lejepa.sigreg import SlicedEppsPulley
 def test_sigreg_gradcheck():
     torch.manual_seed(0)
     sig = SlicedEppsPulley(4, num_slices=8)
-    sig.t = sig.t.double()
-    sig.weights = sig.weights.double()
-    sig.phi = sig.phi.double()
     A = torch.randn(4, 8, dtype=torch.float64)
     A = A / A.norm(dim=0, keepdim=True)
 

@@ -41,6 +41,20 @@ class MultiViewDataset(torch.utils.data.Dataset):
         return torch.stack(views), label
 
 
+def to_view_major(views):
+    """(B, V, ...) -> (V*B, ...) so that .view(V, B, ...) is view-major.
+
+    The DataLoader stacks views image-major (row r = b*V + v). Flattening
+    directly and then calling .view(V, B, K) silently scrambles the view and
+    batch axes. Transposing first makes the row order v*B + b.
+    """
+    if views.dim() < 2:
+        raise ValueError(f"expected (B, V, ...), got {tuple(views.shape)}")
+    V = views.size(1)
+    B = views.size(0)
+    return views.transpose(0, 1).reshape(V * B, *views.shape[2:])
+
+
 def build_model(cfg):
     enc = LeJEPAEncoder(
         img_size=cfg.get("img_size", 128),
@@ -97,15 +111,15 @@ def train(cfg, out_dir="runs"):
         for views, labels in loader:
             views = views.to(device)  # (B, V, C, H, W)
             B = views.size(0)
-            v = views.view(B * V, *views.shape[2:])
-            emb = enc(v)  # (B*V, 512)
+            v = to_view_major(views)  # (V*B, C, H, W)
+            emb = enc(v)  # (V*B, 512)
             z = proj(emb).view(V, B, -1)
             loss, lp, ls = lejepa_loss(z, sig, lamb)
             opt.zero_grad()
             loss.backward()
             opt.step()
 
-            # online probe on detached embeddings
+            # online probe on detached embeddings; view-major rows repeat labels
             with torch.no_grad():
                 probe_in = emb.detach()
             probe_logits = probe(probe_in)

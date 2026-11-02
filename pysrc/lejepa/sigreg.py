@@ -22,26 +22,39 @@ class SlicedEppsPulley(nn.Module):
         self.register_buffer("phi", phi)
 
     def forward(self, x, A=None):
-        # x: (N, K) or (V, N, K)
+        # x: (N, K) or (V, N, K). Returns a scalar averaged over views and slices.
         if x.dim() == 2:
             x = x.unsqueeze(0)
-            single = True
-        else:
-            single = False
+        elif x.dim() != 3:
+            raise ValueError(f"expected 2D or 3D input, got shape {tuple(x.shape)}")
         V, N, K = x.shape
-        # shared directions across views
+        if K != self.in_dim:
+            raise ValueError(f"expected in_dim={self.in_dim}, got K={K}")
+        if N == 0:
+            raise ValueError("SIGReg needs at least one sample per view")
+
+        # FP64 is only needed for gradcheck; FP16/BF16 statistics stay FP32
+        # The projection may still run in x.dtype.
+        stat_dtype = torch.float64 if x.dtype == torch.float64 else torch.float32
+        t = self.t.to(stat_dtype)
+        weights = self.weights.to(stat_dtype)
+        phi = self.phi.to(stat_dtype)
+
+        # Sample and normalize directions in FP32 (FP64 for gradcheck), then
+        # cast to the projection dtype. One A is shared by all views.
+        dir_dtype = torch.float64 if x.dtype == torch.float64 else torch.float32
         if A is None:
-            A = torch.randn(K, self.num_slices, device=x.device, dtype=x.dtype)
-        A = A / A.norm(dim=0, keepdim=True)
-        # project: (V, N, S)
-        proj = torch.einsum("vnk,ks->vns", x, A)
-        x_t = proj.unsqueeze(-1) * self.t  # (V, N, S, T)
+            A = torch.randn(K, self.num_slices, device=x.device, dtype=dir_dtype)
+        else:
+            if A.shape != (K, self.num_slices):
+                raise ValueError(f"expected A shape {(K, self.num_slices)}, got {tuple(A.shape)}")
+            A = A.to(device=x.device, dtype=dir_dtype)
+        A = (A / A.norm(dim=0, keepdim=True)).detach().to(x.dtype)
+
+        proj = torch.einsum("vnk,ks->vns", x, A)  # (V, N, S)
+        x_t = proj.unsqueeze(-1).to(stat_dtype) * t  # (V, N, S, T)
         cos_mean = torch.cos(x_t).mean(dim=1)  # (V, S, T)
         sin_mean = torch.sin(x_t).mean(dim=1)
-        err = (cos_mean - self.phi).square() + sin_mean.square()
-        per_view = (err @ self.weights) * N  # (V, S)
-        per_view = per_view.mean(dim=1)  # (V,)
-        out = per_view.mean()  # scalar
-        if single:
-            pass
-        return out
+        err = (cos_mean - phi).square() + sin_mean.square()
+        per_view = (err @ weights) * N  # (V, S)
+        return per_view.mean()  # mean over views and slices
