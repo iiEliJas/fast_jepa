@@ -31,6 +31,13 @@ Date: 2026-11-02
 | throughput | 367.3 imgs/s |
 | step time | 43.57 ms |
 
+## Training step comparison (V=2, B=8, 32x32, 2-layer ViT)
+
+| metric | ours | official SIGReg |
+|--------|------|-----------------|
+| throughput (imgs/s) | 367.3 | 576.6 |
+| step time (ms) | 43.57 | 27.75 |
+
 ## Reproduce
 ```bash
 PYTHONPATH=pysrc .venv/bin/python tools/bench_sigreg.py
