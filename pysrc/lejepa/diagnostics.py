@@ -11,4 +11,3 @@ def embedding_diagnostics(z):
     p = s / s.sum()
     erank = torch.exp(-(p * p.log()).sum())
     return {"std_mean": std_per_dim.mean().item(), "erank": erank.item()}
-

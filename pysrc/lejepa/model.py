@@ -1,14 +1,18 @@
-import torch
-from torch import nn
 import timm
+from torch import nn
 
 
 class LeJEPAEncoder(nn.Module):
     def __init__(self, img_size=128, patch_size=8, embed_dim=384, depth=12, num_heads=6):
         super().__init__()
         self.vit = timm.create_model(
-            "vit_small_patch8_224", pretrained=False, img_size=img_size,
-            patch_size=patch_size, embed_dim=embed_dim, depth=depth, num_heads=num_heads,
+            "vit_small_patch8_224",
+            pretrained=False,
+            img_size=img_size,
+            patch_size=patch_size,
+            embed_dim=embed_dim,
+            depth=depth,
+            num_heads=num_heads,
             num_classes=0,
         )
         self.proj_head = nn.Linear(embed_dim, 512)
@@ -33,4 +37,3 @@ class Projector(nn.Module):
 
     def forward(self, x):
         return self.net(x)
-

@@ -29,10 +29,14 @@ jobs:
           pip install ruff pytest
           pip install -r requirements.txt
       - name: Ruff
+        env:
+          PYTHONPATH: pysrc
         run: |
           ruff check .
           ruff format --check .
       - name: Tests
+        env:
+          PYTHONPATH: pysrc
         run: pytest tests/
 
   windows-python:
@@ -50,9 +54,12 @@ jobs:
           pip install ruff pytest
           pip install -r requirements.txt
       - name: Ruff
+        env:
+          PYTHONPATH: pysrc
         run: |
           ruff check .
           ruff format --check .
       - name: Tests
+        env:
+          PYTHONPATH: pysrc
         run: pytest tests/
-
