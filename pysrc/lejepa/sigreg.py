@@ -21,7 +21,7 @@ class SlicedEppsPulley(nn.Module):
         self.register_buffer("weights", weights * phi)
         self.register_buffer("phi", phi)
 
-    def forward(self, x):
+    def forward(self, x, A=None):
         # x: (N, K) or (V, N, K)
         if x.dim() == 2:
             x = x.unsqueeze(0)
@@ -30,7 +30,8 @@ class SlicedEppsPulley(nn.Module):
             single = False
         V, N, K = x.shape
         # shared directions across views
-        A = torch.randn(K, self.num_slices, device=x.device, dtype=x.dtype)
+        if A is None:
+            A = torch.randn(K, self.num_slices, device=x.device, dtype=x.dtype)
         A = A / A.norm(dim=0, keepdim=True)
         # project: (V, N, S)
         proj = torch.einsum("vnk,ks->vns", x, A)
