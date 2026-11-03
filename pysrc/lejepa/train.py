@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timezone
 
 import torch
+from common.device import device_info
 from common.seeding import seed_everything, worker_init_fn
 from torch import nn
 from torch.optim import AdamW
@@ -251,34 +252,6 @@ def autocast_context(device, precision):
     if precision == "fp16":
         return torch.autocast("cuda", dtype=torch.float16)
     raise ValueError(f"unknown precision={precision!r}")
-
-
-def device_info(device):
-    info = {
-        "type": device.type,
-        "torch": torch.__version__,
-        "cuda": torch.version.cuda,
-        "cudnn": torch.backends.cudnn.version(),
-    }
-    if device.type == "cuda":
-        props = torch.cuda.get_device_properties(device)
-        info.update(
-            {
-                "name": props.name,
-                "capability": f"{props.major}.{props.minor}",
-                "total_memory_gb": round(props.total_memory / 2**30, 2),
-            }
-        )
-        try:
-            out = subprocess.check_output(
-                ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
-                text=True,
-                timeout=5,
-            )
-            info["driver"] = out.strip().splitlines()[0]
-        except Exception:
-            info["driver"] = None
-    return info
 
 
 def git_commit():

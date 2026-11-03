@@ -1,13 +1,27 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "fastjepa-pysrc"
 version = "0.1.0"
-requires-python = ">=3.9"
+description = "PyTorch ground truth and benchmark baselines for FastJEPA"
+license = "Apache-2.0"
+requires-python = ">=3.10"
 dependencies = [
-  "torch",
-  "torchvision",
-  "timm",
-  "numpy",
+  "torch>=2.3",
+  "torchvision>=0.15",
+  "timm>=0.9",
+  "numpy>=1.24",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+dev = ["pytest>=7.0", "ruff>=0.5"]
+parity = ["scipy>=1.11"]
+
+[project.scripts]
+fastjepa-train = "lejepa.train:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lejepa*", "common*", "lewm*", "baselines*"]

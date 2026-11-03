@@ -14,7 +14,7 @@ def main():
     A = torch.randn(8, 16)
     A = A / A.norm(dim=0, keepdim=True)
     val = sig(x, A=A)
-    out_dir = os.path.join(os.path.dirname(__file__), "..", "bench")
+    out_dir = os.path.join(os.path.dirname(__file__), "..", "tests", "data")
     os.makedirs(out_dir, exist_ok=True)
     torch.save({"x": x, "A": A, "val": val}, os.path.join(out_dir, "sigreg_ref.pt"))
     print("dumped", val.item())

@@ -208,6 +208,10 @@ tempCodeRunnerFile.py
 # Ruff stuff:
 .ruff_cache/
 
+# Local training runs and downloaded datasets
+/runs/
+/data/
+
 # PyPI configuration file
 .pypirc
 

@@ -28,15 +28,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff pytest
           pip install -r requirements.txt
+          pip install -e . --no-deps
       - name: Ruff
-        env:
-          PYTHONPATH: pysrc
         run: |
           ruff check .
           ruff format --check .
+      - name: Import check
+        run: python -c "import lejepa, common; print(lejepa.__file__)"
       - name: Tests
-        env:
-          PYTHONPATH: pysrc
         run: pytest tests/
 
   windows-python:
@@ -53,13 +52,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff pytest
           pip install -r requirements.txt
+          pip install -e . --no-deps
       - name: Ruff
-        env:
-          PYTHONPATH: pysrc
         run: |
           ruff check .
           ruff format --check .
+      - name: Import check
+        run: python -c "import lejepa, common; print(lejepa.__file__)"
       - name: Tests
-        env:
-          PYTHONPATH: pysrc
         run: pytest tests/

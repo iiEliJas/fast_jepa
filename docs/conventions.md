@@ -1,4 +1,4 @@
-# Conventions (from BLT, `~/projects/fast_BLT`, commit to be pinned)
+# Conventions (from BLT, `~/projects/fBLT`, commit `5da89ec4ce31d4c66ffe3149cbdf14c3c855f82e`)
 
 ## Build
 - CMake, C99 host, CUDA C++17 when `USE_CUDA=ON`. Options `USE_CUDA`. Default arch 89; override `-DCMAKE_CUDA_ARCHITECTURES`.
@@ -26,6 +26,7 @@
 ## Benchmarks
 - `bench/harness.h`: timer, stats (mean/stddev/min/max/p50/p90/p99), `bench_collect_samples`, JSONL output.
 - Warmup discarded; >=20 iterations recommended.
+- Python baselines use `bench/harness.py` (same rules, `torch.cuda.Event`, median/IQR, JSONL, device/driver logging). `bench/run_benchmarks.py` is the one-command entry point.
 
 ## Style
 - `.clang-format`, `.editorconfig` present; `-Wall -Wextra`.

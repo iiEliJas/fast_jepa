@@ -1,7 +1,19 @@
 # Reuse audit (WP A0)
 
-BLT repo: `~/projects/fast_BLT`. Pin exact commit hash before reuse
-(`git -C ~/projects/fast_BLT rev-parse HEAD`).
+## Pinned references
+
+| Project | Checkout | Commit | License | Use |
+|---|---|---|---|---|
+| Fast BLT (owner) | `~/projects/fBLT` | `5da89ec4ce31d4c66ffe3149cbdf14c3c855f82e` | Apache-2.0 | build system, C conventions, harness patterns |
+| Official LeJEPA | `~/projects/lejepa` | `c293d291ca87cd4fddee9d3fffe4e914c7272052` | CC BY-NC 4.0 (LICENSE file; its `pyproject.toml` says MIT, the LICENSE file wins) | external parity/benchmark reference only |
+
+`AGENTS.md` points at `~/projects/fast_BLT`; the actual owner checkout is
+`~/projects/fBLT`. Update the pointer or add a symlink when convenient.
+
+The official LeJEPA license is non-commercial. It is executed as an external
+baseline for parity tests and benchmarks and is not copied into `csrc/` or
+`pysrc/`. Do not vendor it into a distributed artifact without checking the
+license again.
 
 ## Decisions
 
@@ -12,7 +24,7 @@ BLT repo: `~/projects/fast_BLT`. Pin exact commit hash before reuse
 | Device queries / backend | all | direct | reuse | `core/backend.c`, `core/platform.h` |
 | Tensor + arena allocator | all | direct | reuse | `core/tensor.h`, `core/allocator.h` |
 | JSON config parsing | all | direct | reuse | `core/json.h` |
-| Timers / benchmark harness | 5.7 | direct | reuse | `bench/harness.h` (clock_gettime based; add cudaEvent timing) |
+| Timers / benchmark harness | 5.7 | direct | adapt | BLT `bench/harness.h` is the model; the Python baselines use `bench/harness.py` with `torch.cuda.Event`, median/IQR and JSONL. The C harness is reused when kernels land |
 | Test harness (golden binary tensors, tolerances) | 9 | direct | reuse | `tests/test_helpers.h` |
 | GEMM wrappers (cuBLAS/cuBLASLt) | ViT/projector | audit | adapt | check decision D1; BLT matmul interface in `ops/matmul.h` |
 | Attention fwd/bwd | ViT, predictor, Track B | adapt | adapt | BLT causal/block-causal masks; ViT needs full bidirectional; head dim 64 |

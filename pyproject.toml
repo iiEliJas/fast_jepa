@@ -1,36 +1,40 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fblt"
-version = "1.0.1"
-description = "Fast Byte Latent Transformer"
+name = "fastjepa"
+version = "0.1.0"
+description = "FastJEPA: LeJEPA ground truth in PyTorch, with C/CUDA kernels in progress"
 readme = "README.md"
-license = {text = "Apache-2.0"}
-authors = [{name = "iiEliJas"}]
-urls = {Homepage = "https://github.com/iiEliJas/fBLT", Repository = "https://github.com/iiEliJas/fBLT"}
-requires-python = ">=3.9"
-dependencies = ["pyyaml"]
-classifiers = [
-  "License :: OSI Approved :: Apache Software License",
-  "Programming Language :: Python :: 3",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.3",
+  "torchvision>=0.15",
+  "timm>=0.9",
+  "numpy>=1.24",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
-data = ["datasets"]
-plots = ["matplotlib", "numpy"]
-parity = ["torch", "numpy"]
-tracking = ["wandb"]
-
-[tool.setuptools.packages.find]
-include = ["fblt*"]
+dev = ["pytest>=7.0", "ruff>=0.5"]
+parity = ["scipy>=1.11"]
 
 [project.scripts]
-fblt-train = "fblt.train:main"
-fblt-infer = "fblt.infer:main"
+fastjepa-train = "lejepa.train:main"
+
+[tool.setuptools]
+package-dir = {"" = "pysrc"}
+
+[tool.setuptools.packages.find]
+where = ["pysrc"]
+include = ["lejepa*", "common*", "lewm*", "baselines*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["pysrc"]
+addopts = "-ra"
 
 [tool.ruff]
 line-length = 100
@@ -38,7 +42,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-ignore = []
-
-[tool.pytest.ini_options]
-testpaths = ["tests/py"]

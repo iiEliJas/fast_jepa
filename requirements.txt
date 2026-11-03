@@ -1,6 +1,15 @@
-# fast JEPA Python dependencies (ground truth + tests + tools)
-torch>=2.0
+# Python dependencies for the ground truth, tests and benchmarks.
+# The C/CUDA build has no Python dependencies (see CMakeLists.txt).
+
+# Runtime
+torch>=2.3
 torchvision>=0.15
 timm>=0.9
 numpy>=1.24
+
+# Official LeJEPA parity baseline (external checkout, see docs/reuse.md)
+scipy>=1.11
+
+# Development
 pytest>=7.0
+ruff>=0.5
