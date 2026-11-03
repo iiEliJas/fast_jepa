@@ -7,6 +7,9 @@ torchvision>=0.15
 timm>=0.9
 numpy>=1.24
 
+# Run analysis and plots (tools/analyze_run.py; optional)
+matplotlib>=3.8
+
 # Official LeJEPA parity baseline (external checkout, see docs/reuse.md)
 scipy>=1.11
 

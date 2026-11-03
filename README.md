@@ -1,27 +1,29 @@
 # FastJEPA
 
 FastJEPA is a from-scratch C/CUDA project around the Joint Embedding Predictive
-Architecture (JEPA) family. It has three tracks:
+Architecture (JEPA) family. What i am trying to implement:
 
-1. **Track A (foundation):** a C/CUDA implementation of LeJEPA training (ViT
-   encoder + SIGReg regularizer) that is measurably faster than the official
-   PyTorch reference under a documented benchmark.
-2. **Track B (research):** a study of whether adding a JEPA-style latent
-   prediction objective (with SIGReg) to a byte latent transformer improves
-   data efficiency or representation quality.
-3. **Track C (research):** a minimal JEPA world model trained from pixels, with
-   a fast CUDA planner (CEM/MPPI) operating in latent space on a single
-   consumer GPU.
+- **Foundation**: a fast C/CUDA implementation of LeJEPA training (ViT encoder +
+  SIGReg regularizer) that is measurably faster than the official PyTorch
+  reference under a documented benchmark.
+- **Research**: a study of whether adding a JEPA-style latent prediction objective
+  (with SIGReg) to a byte latent transformer improves data efficiency or
+  representation quality. 
+  [Note: this will be done in its own repo, but the code will be shared with FastJEPA.]
+- **Research**: a minimal JEPA world model trained from pixels, with a fast CUDA
+  planner (CEM/MPPI) operating in latent space on a single consumer GPU.
 
 The project targets small models on small datasets on a single consumer GPU
 (NVIDIA RTX 4060, 8 GB). Python/PyTorch code lives in `pysrc/` as the ground
-truth and benchmark baseline; the training binary in `csrc/` does not depend on
-PyTorch.
+truth and benchmark baseline. The training binary in `csrc/` does not depend on
+PyTorch and is intended to be a from scratch C/CUDA implementation of LeJEPA training.
 
-## What works today
+## Status 
 
-The Python ground truth is complete enough to train LeJEPA and to compare
-against the pinned official implementation:
+While the C/CUDA side is not implemented yet, i have currently implemented a full
+python ground truth to train and learn the LeJEPA architecture and resulting model.
+And i have done some comparisons with the official implementation to ensure parity. 
+The current status of the project is:
 
 - `pysrc/lejepa/sigreg.py`: sliced Epps-Pulley SIGReg with FP32 statistics for
   FP16/BF16 inputs, FP64 support for gradchecks, shared directions across
@@ -35,12 +37,20 @@ against the pinned official implementation:
   NaN guard, JSONL logging and full checkpoints.
 - `configs/lejepa_parity.json` and `configs/lejepa_cifar10.json`: runnable
   recipes.
+- `tools/analyze_run.py`: read a finished run, evaluate the frozen encoder,
+  and write a Markdown report plus plots for loss curves, effective rank,
+  Gaussianity, PCA, probe errors and view invariance.
+- `pysrc/lejepa/analysis.py`: the pure-torch numbers behind that report
+  (spectrum, effective rank, sliced Gaussianity, k-NN, confusion matrix).
 - `tests/`: op tests against PyTorch, FP64 gradchecks, official parity in an
   isolated subprocess, overfit and end-to-end training smoke tests.
 - `bench/`: SIGReg forward/backward and synthetic training-step benchmarks with
   a shared CUDA-event harness and JSONL results.
 
 ## Quick start
+
+Make sure to checkout the well written and documented ´CLI_REFERENCE.md´ for a complete
+list of commands and options.
 
 ```bash
 # Install the Python ground truth (torch/torchvision/timm must be available).
@@ -55,6 +65,10 @@ ruff format --check .
 # Train (CIFAR-10 config; data is downloaded into data/ on first use).
 python -m lejepa.train --config configs/lejepa_cifar10.json
 
+# Analyze a finished run (writes runs/<name>/analysis/report.md and plots/).
+pip install -e ".[analysis]" --no-deps   # adds matplotlib
+python tools/analyze_run.py --run-dir runs/lejepa_cifar10
+
 # Benchmarks (writes bench/results/*.jsonl).
 python bench/run_benchmarks.py
 ```
@@ -62,19 +76,10 @@ python bench/run_benchmarks.py
 The C/CUDA side is built with CMake (`cmake -S . -B build -DUSE_CUDA=ON`), but
 `csrc/` is still a skeleton.
 
-## Status and honest limitations
+## Experiments
 
-- **C/CUDA kernels are not implemented yet.** `csrc/` contains the build
-  skeleton only. No speedup over the official implementation is claimed until
-  a kernel exists and a script in `bench/` reproduces the number.
-- **Current benchmarks compare two Python implementations**: this repository's
-  SIGReg and the pinned official SIGReg, under the same shapes, dtype and
-  timing protocol. Results and reproduction commands are in
-  `docs/experiments/001_sigreg_benchmark.md`.
-- **Track B and Track C are not started.** Their sections of
-  `fast_JEPA_protocol.md` are the plan, not a description of working code.
-- The official LeJEPA checkout used for parity and benchmarks is licensed
-  CC BY-NC 4.0. It is an external reference only; see `docs/reuse.md`.
+A complete and structured list of experiments and results is maintained in `docs/EXPERIMENT_LOG.md`.
+So if you are interested -> check it out ;D
 
 ## Layout
 
@@ -87,9 +92,6 @@ bench/      benchmark scripts and raw JSONL results
 configs/    JSON training configs
 docs/       protocol, conventions, reuse audit, experiment write-ups
 ```
-
-The single source of truth for scope, success criteria and numerical rules is
-`fast_JEPA_protocol.md`. Agent instructions are in `AGENTS.md`.
 
 ## License
 

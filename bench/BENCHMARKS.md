@@ -1,7 +1,7 @@
 # Benchmarks
 
 Python-vs-Python baselines for SIGReg and a synthetic training step. The C/CUDA
-kernels do not exist yet, so nothing here is a Track A speedup claim.
+kernels do not exist yet. 
 
 ## Run
 
@@ -15,8 +15,7 @@ The official baseline is read from `~/projects/lejepa` by default. Override
 with `--official-root` or `LEJEPA_OFFICIAL_ROOT`. If the checkout is missing,
 the runner falls back to `--impl fastjepa` and says so.
 
-Raw results land in `bench/results/*.jsonl`; the write-up is
-`docs/experiments/001_sigreg_benchmark.md`.
+Raw results land in `bench/results/*.jsonl`.
 
 ## Timing method
 
@@ -29,18 +28,6 @@ Raw results land in `bench/results/*.jsonl`; the write-up is
 - a clock-ramp pass runs before the first measured configuration;
 - every record carries git commit, device name/capability/memory, driver,
   CUDA/cuDNN versions, clocks and the full config.
-
-## Record schema
-
-Common fields: `schema`, `kind`, `bench`, `timestamp`, `git_commit`, `device`,
-`config`, `timer`, `iters`, `warmup`, `median_ms`, `p25_ms`, `p75_ms`,
-`iqr_ms`, `mean_ms`, `std_ms`, `min_ms`, `max_ms`.
-
-SIGReg records add `impl`, `mode` (`forward` / `backward`), `views`, `shape`,
-`N`, `K`, `S`, `dtype` and `module_dtype`.
-
-Training records add `sigreg`, `phase` (`forward`, `forward_backward`,
-`full_step`), `images_per_s` and `peak_mem_mb` (full step only).
 
 ## Files
 

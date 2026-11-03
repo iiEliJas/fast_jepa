@@ -42,6 +42,30 @@ Outputs go to `runs/<config-name>/` unless `--out-dir` is given:
 `data/imagenette2-160/{train,val}`. Missing `data_dir` is an error, not a silent
 fallback.
 
+## Run analysis
+
+`tools/analyze_run.py` reads `run.json`, `log.jsonl` and `ckpt.pt`, evaluates
+the frozen encoder and its probe on the validation split, and writes a guided
+report. Install the optional plotting dependency first:
+
+```bash
+pip install -e ".[analysis]" --no-deps   # matplotlib
+python tools/analyze_run.py --run-dir runs/lejepa_cifar10
+```
+
+Outputs go to `runs/<name>/analysis/`:
+
+- `report.md`: headline metrics, interpretation and figure guide.
+- `metrics.json`: every number used in the report, plus config and device.
+- `plots/*.png`: training curves, optimization, loss decomposition, probe
+  confusion/calibration, rank spectrum, Gaussianity, PCA and representation
+  quality.
+
+Useful options: `--checkpoint` for `ckpt_last.pt`, `--out-dir` to keep the
+report elsewhere, `--device cpu`, `--knn-train-limit` for a smaller k-NN set,
+and `--offline-probe-epochs 0` to skip the offline probe. The numerical helpers
+live in `pysrc/lejepa/analysis.py` and are covered by the test suite.
+
 ## Benchmarks
 
 ```bash
