@@ -10,7 +10,13 @@ import torch
 from lejepa.loss import lejepa_loss
 from lejepa.model import LeJEPAEncoder
 from lejepa.sigreg import SlicedEppsPulley
-from lejepa.train import build_scheduler, build_transform, resolve_config, train
+from lejepa.train import (
+    build_scheduler,
+    build_transform,
+    format_duration,
+    resolve_config,
+    train,
+)
 from PIL import Image
 from torchvision import transforms
 
@@ -224,11 +230,29 @@ def test_train_smoke_writes_logs_and_full_checkpoint(tmp_path):
     assert {"loss", "lp", "ls", "lr", "step_time_ms", "imgs_per_s"} <= set(steps[0])
     epoch = epochs[-1]
     assert {"erank", "std_mean", "collapsed", "probe_acc", "probe_val_loss"} <= set(epoch)
+    assert {
+        "epoch_seconds",
+        "elapsed_seconds",
+        "eta_seconds",
+        "eta_at",
+    } <= set(epoch)
+    assert epoch["epoch_seconds"] >= 0.0
+    assert epoch["elapsed_seconds"] >= 0.0
+    assert epoch["eta_seconds"] >= 0.0
+    assert isinstance(epoch["eta_at"], str) and "T" in epoch["eta_at"]
     assert epoch["probe_acc"] is not None
     assert 0.0 <= epoch["probe_acc"] <= 1.0
 
     ckpt = torch.load(out_dir / "ckpt.pt", weights_only=False)
     assert {"enc", "proj", "probe", "opt", "sched", "epoch", "step", "config", "rng"} <= set(ckpt)
+
+
+def test_format_duration():
+    assert format_duration(0) == "0s"
+    assert format_duration(9.4) == "9s"
+    assert format_duration(65) == "1m 05s"
+    assert format_duration(3661) == "1h 01m 01s"
+    assert format_duration(-3) == "0s"
 
 
 def test_train_rejects_missing_imagefolder(tmp_path):

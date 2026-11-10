@@ -35,8 +35,16 @@ fastjepa-train --config configs/lejepa_cifar10.json
 Outputs go to `runs/<config-name>/` unless `--out-dir` is given:
 
 - `run.json`: git commit, resolved config, device/driver/CUDA, timestamp, seed.
-- `log.jsonl`: per-step and per-epoch records.
+- `log.jsonl`: per-step and per-epoch records. Epoch records include
+  `epoch_seconds`, `elapsed_seconds`, `eta_seconds` and `eta_at`.
 - `ckpt.pt` and `ckpt_epoch_*.pt`: model, optimizer, scheduler, RNG state.
+
+The terminal prints one line per epoch with the epoch duration, total elapsed
+time and the estimated finish time:
+
+```
+epoch 3 loss 0.1931 lp 0.1458 ls 2.3721 erank 15.42 acc 0.6406 | epoch 43s elapsed 2m 54s eta 10m 06s (15:42:11)
+```
 
 `configs/lejepa_parity.json` expects Imagenette under
 `data/imagenette2-160/{train,val}`. Missing `data_dir` is an error, not a silent

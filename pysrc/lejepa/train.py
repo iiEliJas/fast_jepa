@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import torch
 from common.device import device_info
@@ -70,6 +70,39 @@ def resolve_config(cfg):
     if out["V_g"] is None:
         out["V_g"] = out["V"]
     return out
+
+
+def format_duration(seconds):
+    """Duration for progress lines, e.g. ``1h 12m 03s``."""
+    seconds = max(0, int(round(seconds)))
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m {seconds:02d}s"
+    if minutes:
+        return f"{minutes}m {seconds:02d}s"
+    return f"{seconds}s"
+
+
+def epoch_eta(epoch_started, training_started, completed_epochs, total_epochs):
+    """Timing fields for one finished epoch.
+
+    Uses wall-clock time for the estimate, so data loading and the probe are
+    included rather than the sum of the individual step timers.
+    """
+    now = time.perf_counter()
+    elapsed = max(0.0, now - training_started)
+    epoch_seconds = max(0.0, now - epoch_started)
+    completed = max(1, completed_epochs)
+    average_epoch = elapsed / completed
+    remaining = average_epoch * max(0, total_epochs - completed_epochs)
+    eta_at = datetime.now().astimezone() + timedelta(seconds=remaining)
+    return {
+        "epoch_seconds": epoch_seconds,
+        "elapsed_seconds": elapsed,
+        "eta_seconds": remaining,
+        "eta_at": eta_at.isoformat(timespec="seconds"),
+    }
 
 
 def _solarize(threshold, p):
@@ -398,7 +431,14 @@ def train(cfg, out_dir="runs"):
     lamb = cfg["lamb"]
     K = cfg["proj_dim"]
 
+    print(
+        f"training {cfg['epochs']} epochs, {len(loader)} steps/epoch, "
+        f"{cfg['batch_size']}x{cfg['V']} views/step"
+    )
+    training_started = time.perf_counter()
+
     for epoch in range(cfg["epochs"]):
+        epoch_started = time.perf_counter()
         enc.train()
         proj.train()
         probe.train()
@@ -494,6 +534,12 @@ def train(cfg, out_dir="runs"):
             if val_loader is not None
             else {"probe_acc": None, "probe_val_loss": None}
         )
+        timing = epoch_eta(
+            epoch_started,
+            training_started,
+            completed_epochs=epoch + 1,
+            total_epochs=cfg["epochs"],
+        )
         summary = {
             "kind": "epoch",
             "epoch": epoch,
@@ -502,6 +548,7 @@ def train(cfg, out_dir="runs"):
             "ls": sum(epoch_ls) / len(epoch_ls),
             "step_time_ms_mean": 1000.0 * sum(epoch_times) / len(epoch_times),
             "imgs_per_s": (cfg["batch_size"] * V) / (sum(epoch_times) / len(epoch_times)),
+            **timing,
             **diag,
             **probe_metrics,
         }
@@ -513,7 +560,11 @@ def train(cfg, out_dir="runs"):
         print(
             f"epoch {epoch} loss {summary['loss']:.4f} "
             f"lp {summary['lp']:.4f} ls {summary['ls']:.4f} "
-            f"erank {summary['erank']:.2f} acc {acc}"
+            f"erank {summary['erank']:.2f} acc {acc} "
+            f"| epoch {format_duration(timing['epoch_seconds'])} "
+            f"elapsed {format_duration(timing['elapsed_seconds'])} "
+            f"eta {format_duration(timing['eta_seconds'])} "
+            f"({timing['eta_at'][11:19]})"
         )
 
         if cfg["save_every"] and (epoch + 1) % cfg["save_every"] == 0:
