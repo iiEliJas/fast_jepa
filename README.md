@@ -20,10 +20,9 @@ PyTorch and is intended to be a from scratch C/CUDA implementation of LeJEPA tra
 
 ## Status 
 
-While the C/CUDA side is not implemented yet, i have currently implemented a full
-python ground truth to train and learn the LeJEPA architecture and resulting model.
-And i have done some comparisons with the official implementation to ensure parity. 
-The current status of the project is:
+While the C/CUDA side is not implemented yet, the Python ground truth covers
+LeJEPA training and the LeWM world model, and both are checked against their
+official implementations. The current status of the project is:
 
 - `pysrc/lejepa/sigreg.py`: sliced Epps-Pulley SIGReg with FP32 statistics for
   FP16/BF16 inputs, FP64 support for gradchecks, shared directions across
@@ -42,8 +41,16 @@ The current status of the project is:
   Gaussianity, PCA, probe errors and view invariance.
 - `pysrc/lejepa/analysis.py`: the pure-torch numbers behind that report
   (spectrum, effective rank, sliced Gaussianity, k-NN, confusion matrix).
+- `pysrc/lewm/`: LeWM world model: explicit ViT-tiny encoder,
+  AdaLN-zero predictor, SIGReg loss, CEM planner, HDF5 episode loader and a
+  minimal trainer. The released Push-T checkpoint loads with `strict=True`;
+  module and full-model parity are checked against `~/projects/le-wm`.
+- `configs/lewm_pusht.json`: LeWM training recipe (10 epochs, batch 128, bf16).
+- `tools/lewm_plan_offline.py`: latent CEM planning on one dataset episode,
+  without needing gymnasium.
 - `tests/`: op tests against PyTorch, FP64 gradchecks, official parity in an
-  isolated subprocess, overfit and end-to-end training smoke tests.
+  isolated subprocess, overfit and end-to-end training smoke tests, plus LeWM
+  module/model/planner/data/trainer tests.
 - `bench/`: SIGReg forward/backward and synthetic training-step benchmarks with
   a shared CUDA-event harness and JSONL results.
 
@@ -65,8 +72,20 @@ ruff format --check .
 # Train (CIFAR-10 config; data is downloaded into data/ on first use).
 python -m lejepa.train --config configs/lejepa_cifar10.json
 
+# LeWM world model. h5py is only needed for the HDF5 dataset loader.
+pip install -e ".[lewm-data]"
+python -m lewm.train --config configs/lewm_pusht.json \
+    --data-path /data/pusht_expert_train.h5 --epochs 10
+python tools/lewm_plan_offline.py --data-path /data/pusht_expert_train.h5 \
+    --checkpoint runs/lewm_pusht/last.pt --episode 0 --start 10 --device cuda
+
+# LeWM tests (the parity tests need the official checkout and transformers).
+pytest tests/test_lewm_modules.py tests/test_lewm_model.py \
+    tests/test_lewm_planner.py tests/test_lewm_data.py \
+    tests/test_lewm_train.py -q
+
 # Analyze a finished run (writes runs/<name>/analysis/report.md and plots/).
-pip install -e ".[analysis]" --no-deps   # adds matplotlib
+pip install -e ".[analysis]"   # adds matplotlib
 python tools/analyze_run.py --run-dir runs/lejepa_cifar10
 
 # Benchmarks (writes bench/results/*.jsonl).
@@ -80,6 +99,9 @@ The C/CUDA side is built with CMake (`cmake -S . -B build -DUSE_CUDA=ON`), but
 
 A complete and structured list of experiments and results is maintained in `docs/EXPERIMENT_LOG.md`.
 So if you are interested -> check it out ;D
+
+The first LeWM implementation/parity experiment is
+`docs/experiments/003_lewm_parity.md`.
 
 ## Layout
 

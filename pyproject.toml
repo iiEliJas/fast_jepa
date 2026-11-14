@@ -21,9 +21,13 @@ dependencies = [
 dev = ["pytest>=7.0", "ruff>=0.5"]
 parity = ["scipy>=1.11"]
 analysis = ["matplotlib>=3.8"]
+lewm-data = ["h5py>=3.10"]
+lewm-parity = ["einops>=0.8", "transformers>=4.40"]
+lewm-env = ["gymnasium>=1.0", "gym-pusht>=0.1", "stable-worldmodel>=0.1"]
 
 [project.scripts]
 fastjepa-train = "lejepa.train:main"
+fastjepa-lewm-train = "lewm.train:main"
 
 [tool.setuptools]
 package-dir = {"" = "pysrc"}
