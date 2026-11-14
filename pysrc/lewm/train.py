@@ -102,10 +102,7 @@ def effective_rank(embeddings: torch.Tensor) -> float:
 
 
 def collate(batch):
-    return {
-        key: torch.stack([item[key] for item in batch])
-        for key in batch[0].keys()
-    }
+    return {key: torch.stack([item[key] for item in batch]) for key in batch[0].keys()}
 
 
 def _git_commit():
@@ -151,10 +148,7 @@ def _autocast_context(device, precision):
 
 
 def _move_batch(batch, device):
-    return {
-        key: value.to(device, non_blocking=True)
-        for key, value in batch.items()
-    }
+    return {key: value.to(device, non_blocking=True) for key, value in batch.items()}
 
 
 def _embedding_stats(embeddings):
@@ -257,9 +251,7 @@ def train(cfg: TrainConfig):
     model = build_lewm(model_cfg).to(device)
     sigreg = build_sigreg(model_cfg).to(device)
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay
-    )
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     steps_per_epoch = max(1, math.ceil(len(train_loader) / cfg.grad_accum_steps))
     total_steps = steps_per_epoch * cfg.epochs
     if cfg.limit_steps:
@@ -279,6 +271,7 @@ def train(cfg: TrainConfig):
     step = 0
     epoch = -1
     with log_path.open("a") as log:
+
         def optimizer_step(out, step_start):
             nonlocal step
             if cfg.grad_clip:
@@ -363,9 +356,7 @@ def train(cfg: TrainConfig):
                 log.flush()
 
             if cfg.save_every_epochs and (epoch + 1) % cfg.save_every_epochs == 0:
-                save_checkpoint(
-                    out_dir / "last.pt", model, optimizer, cfg, step, epoch, sigreg
-                )
+                save_checkpoint(out_dir / "last.pt", model, optimizer, cfg, step, epoch, sigreg)
 
             if stop:
                 break
@@ -404,9 +395,7 @@ def main(argv=None):
     parser.add_argument("--grad-accum-steps", type=int)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--limit-steps", type=int)
-    parser.add_argument(
-        "--cache-data", action=argparse.BooleanOptionalAction, default=None
-    )
+    parser.add_argument("--cache-data", action=argparse.BooleanOptionalAction, default=None)
     args = parser.parse_args(argv)
 
     values = {}
@@ -414,9 +403,7 @@ def main(argv=None):
         with open(args.config) as handle:
             values = json.load(handle)
     overrides = {
-        key: value
-        for key, value in vars(args).items()
-        if key != "config" and value is not None
+        key: value for key, value in vars(args).items() if key != "config" and value is not None
     }
     values.update(overrides)
     if not values.get("data_path"):

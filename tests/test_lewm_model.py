@@ -59,8 +59,7 @@ def _checkpoint_path():
     if CHECKPOINT:
         return CHECKPOINT if os.path.isfile(CHECKPOINT) else None
     pattern = os.path.expanduser(
-        "~/.cache/huggingface/hub/models--quentinll--lewm-pusht/"
-        "snapshots/*/weights.pt"
+        "~/.cache/huggingface/hub/models--quentinll--lewm-pusht/snapshots/*/weights.pt"
     )
     paths = sorted(glob.glob(pattern))
     return paths[-1] if paths else None
@@ -95,9 +94,7 @@ class _OfficialEncoder(nn.Module):
         self.vit = ViTModel(cfg, add_pooling_layer=False)
 
     def forward(self, pixel_values, interpolate_pos_encoding=False):
-        return self.vit(
-            pixel_values, interpolate_pos_encoding=interpolate_pos_encoding
-        )
+        return self.vit(pixel_values, interpolate_pos_encoding=interpolate_pos_encoding)
 
 
 def _load_into_official(ref, state_dict):
@@ -127,9 +124,7 @@ def build_official(official, state_dict=None):
             dropout=CFG.predictor_dropout,
             emb_dropout=CFG.predictor_emb_dropout,
         ),
-        action_encoder=module.Embedder(
-            input_dim=CFG.action_block_dim, emb_dim=CFG.embed_dim
-        ),
+        action_encoder=module.Embedder(input_dim=CFG.action_block_dim, emb_dim=CFG.embed_dim),
         projector=module.MLP(
             input_dim=CFG.embed_dim,
             hidden_dim=CFG.projector_hidden_dim,
@@ -214,12 +209,8 @@ def test_checkpoint_forward_parity(official):
         pred_loss = (pred - emb[:, 1:]).pow(2).mean()
         torch.manual_seed(3)
         sigreg_loss = official[0].SIGReg()(emb.transpose(0, 1))
-        torch.testing.assert_close(
-            ours_loss["pred_loss"], pred_loss, atol=1e-6, rtol=1e-6
-        )
-        torch.testing.assert_close(
-            ours_loss["sigreg_loss"], sigreg_loss, atol=1e-5, rtol=1e-5
-        )
+        torch.testing.assert_close(ours_loss["pred_loss"], pred_loss, atol=1e-6, rtol=1e-6)
+        torch.testing.assert_close(ours_loss["sigreg_loss"], sigreg_loss, atol=1e-5, rtol=1e-5)
 
 
 # ---------------------------------------------------------------------------
@@ -233,9 +224,7 @@ def test_encode_predict_parity(official):
         ours_out = ours.encode(batch)
         ref_out = ref.encode(dict(batch))
         torch.testing.assert_close(ours_out["emb"], ref_out["emb"], atol=1e-5, rtol=1e-5)
-        torch.testing.assert_close(
-            ours_out["act_emb"], ref_out["act_emb"], atol=0, rtol=0
-        )
+        torch.testing.assert_close(ours_out["act_emb"], ref_out["act_emb"], atol=0, rtol=0)
 
         ctx = CFG.history_size
         torch.testing.assert_close(
@@ -300,8 +289,8 @@ def test_rollout_and_cost_parity(official):
         ref_info["goal_emb"] = goal_emb
         ref_roll = ref.rollout(ref_info, actions)
         ref_cost = (
-            ref_roll["predicted_emb"][..., -1, :] - goal_emb[:, -1].unsqueeze(1)
-        ).pow(2).sum(-1)
+            (ref_roll["predicted_emb"][..., -1, :] - goal_emb[:, -1].unsqueeze(1)).pow(2).sum(-1)
+        )
 
     torch.testing.assert_close(
         our_roll["predicted_emb"],

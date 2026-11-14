@@ -33,9 +33,7 @@ class QuadraticCost(nn.Module):
 def _expand(info, num_samples):
     out = {}
     for key, value in info.items():
-        out[key] = value.unsqueeze(1).expand(
-            value.size(0), num_samples, *value.shape[1:]
-        )
+        out[key] = value.unsqueeze(1).expand(value.size(0), num_samples, *value.shape[1:])
     return out
 
 
@@ -64,17 +62,13 @@ def reference_cem(
     var = torch.ones(total_envs, horizon, action_dim)
 
     for _ in range(n_steps):
-        candidates = torch.randn(
-            total_envs, num_samples, horizon, action_dim, generator=generator
-        )
+        candidates = torch.randn(total_envs, num_samples, horizon, action_dim, generator=generator)
         candidates = candidates * var.unsqueeze(1) + mean.unsqueeze(1)
         candidates[:, 0] = mean
 
         costs = cost.get_cost(_expand(info, num_samples), candidates)
         _, topk_inds = torch.topk(costs, k=topk, dim=1, largest=False)
-        batch_indices = (
-            torch.arange(total_envs).unsqueeze(1).expand(-1, topk)
-        )
+        batch_indices = torch.arange(total_envs).unsqueeze(1).expand(-1, topk)
         elites = candidates[batch_indices, topk_inds]
         mean = elites.mean(dim=1)
         var = elites.std(dim=1, correction=0)
@@ -115,9 +109,7 @@ def test_cem_matches_reference_update_rule():
 
     # Candidate 0 is forced to the current mean at every iteration. The first
     # mean is the warm start zero-padded to the full horizon.
-    padded_init = torch.cat(
-        [init_action, torch.zeros(B, H - init_action.size(1), D)], dim=1
-    )
+    padded_init = torch.cat([init_action, torch.zeros(B, H - init_action.size(1), D)], dim=1)
     first = cost.calls[0]
     torch.testing.assert_close(first[:, 0], padded_init, atol=0, rtol=0)
 
@@ -127,9 +119,7 @@ def test_cem_is_seed_deterministic_and_improves_cost():
     g = torch.Generator().manual_seed(1)
     target = torch.randn(B, 1, H, D, generator=g)
     info = {"pixels": torch.zeros(B, 1, 1)}
-    cfg = CEMConfig(
-        horizon=H, action_dim=D, num_samples=32, topk=8, n_steps=6, seed=5
-    )
+    cfg = CEMConfig(horizon=H, action_dim=D, num_samples=32, topk=8, n_steps=6, seed=5)
 
     first = CEMSolver(QuadraticCost(target), cfg).solve(dict(info))
     second = CEMSolver(QuadraticCost(target), cfg).solve(dict(info))

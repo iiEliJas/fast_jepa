@@ -83,14 +83,10 @@ class EpisodeDataset(Dataset):
 
         self._file = h5py.File(path, "r")
         self._cache = {}
-        self._episode_key = episode_key or self._detect(
-            self._file, ("episode_idx", "ep_idx")
-        )
+        self._episode_key = episode_key or self._detect(self._file, ("episode_idx", "ep_idx"))
         self._step_key = step_key or "step_idx"
         if self._episode_key is None:
-            raise KeyError(
-                "no episode column found; expected 'episode_idx' or 'ep_idx'"
-            )
+            raise KeyError("no episode column found; expected 'episode_idx' or 'ep_idx'")
 
         episode_idx = np.asarray(self._file[self._episode_key][:])
         step_idx = np.asarray(self._file[self._step_key][:])

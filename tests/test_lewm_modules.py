@@ -168,9 +168,7 @@ def test_encoder_matches_huggingface():
         x = torch.rand(2, 3, size, size)
         with torch.no_grad():
             actual = ours(x, interpolate_pos_encoding=True).last_hidden_state
-            expected = reference(
-                x, interpolate_pos_encoding=True
-            ).last_hidden_state
+            expected = reference(x, interpolate_pos_encoding=True).last_hidden_state
         # The reference uses SDPA; ours uses explicit eager attention, which is
         # what transformers 4.x did when the checkpoint was trained.
         torch.testing.assert_close(actual, expected, atol=1e-5, rtol=1e-4)

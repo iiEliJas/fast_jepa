@@ -82,9 +82,7 @@ def main(argv=None):
     info = {
         "pixels": context.unsqueeze(0).unsqueeze(0).to(args.device),
         "goal": goal.unsqueeze(0).unsqueeze(0).to(args.device),
-        "action": torch.zeros(
-            1, 1, args.action_block * action_dim, device=args.device
-        ),
+        "action": torch.zeros(1, 1, args.action_block * action_dim, device=args.device),
     }
     solver = CEMSolver(
         model,
@@ -105,10 +103,7 @@ def main(argv=None):
     # the solver's expanded layout: (B, S, history, ...).
     actions = output["actions"].to(args.device)
     with torch.no_grad():
-        cost_info = {
-            key: value.unsqueeze(1)
-            for key, value in info.items()
-        }
+        cost_info = {key: value.unsqueeze(1) for key, value in info.items()}
         cost = model.get_cost(cost_info, actions.unsqueeze(1))
 
     result = {

@@ -80,12 +80,8 @@ class Attention(nn.Module):
         x = self.norm(x)
         drop = self.dropout if self.training else 0.0
         qkv = self.to_qkv(x).chunk(3, dim=-1)
-        q, k, v = (
-            t.reshape(*t.shape[:-1], self.heads, -1).transpose(-3, -2) for t in qkv
-        )
-        out = F.scaled_dot_product_attention(
-            q, k, v, dropout_p=drop, is_causal=causal
-        )
+        q, k, v = (t.reshape(*t.shape[:-1], self.heads, -1).transpose(-3, -2) for t in qkv)
+        out = F.scaled_dot_product_attention(q, k, v, dropout_p=drop, is_causal=causal)
         out = out.transpose(-3, -2)
         return self.to_out(out.reshape(*out.shape[:-2], -1))
 
@@ -99,16 +95,14 @@ class ConditionalBlock(nn.Module):
         self.mlp = FeedForward(dim, mlp_dim, dropout=dropout)
         self.norm1 = nn.LayerNorm(dim, elementwise_affine=False, eps=1e-6)
         self.norm2 = nn.LayerNorm(dim, elementwise_affine=False, eps=1e-6)
-        self.adaLN_modulation = nn.Sequential(
-            nn.SiLU(), nn.Linear(dim, 6 * dim, bias=True)
-        )
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(dim, 6 * dim, bias=True))
         nn.init.constant_(self.adaLN_modulation[-1].weight, 0)
         nn.init.constant_(self.adaLN_modulation[-1].bias, 0)
 
     def forward(self, x, c):
-        shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = (
-            self.adaLN_modulation(c).chunk(6, dim=-1)
-        )
+        shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(
+            c
+        ).chunk(6, dim=-1)
         x = x + gate_msa * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
         x = x + gate_mlp * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
         return x
@@ -155,9 +149,7 @@ class Transformer(nn.Module):
             nn.Linear(input_dim, hidden_dim) if input_dim != hidden_dim else nn.Identity()
         )
         self.output_proj = (
-            nn.Linear(hidden_dim, output_dim)
-            if hidden_dim != output_dim
-            else nn.Identity()
+            nn.Linear(hidden_dim, output_dim) if hidden_dim != output_dim else nn.Identity()
         )
 
     def forward(self, x, c=None):

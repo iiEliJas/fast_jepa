@@ -111,10 +111,7 @@ class JEPA(nn.Module):
         info = dict(info)
         pixels = info["pixels"]
         if pixels.ndim != 5:
-            raise ValueError(
-                "expected pixels of shape (B, T, C, H, W), got "
-                f"{tuple(pixels.shape)}"
-            )
+            raise ValueError(f"expected pixels of shape (B, T, C, H, W), got {tuple(pixels.shape)}")
         # The reference casts to float32 to support bf16 data. Keep float64
         # untouched so finite-difference gradchecks exercise the full model.
         if pixels.dtype != torch.float64:
@@ -285,10 +282,7 @@ class JEPA(nn.Module):
             raise KeyError("goal not in info_dict")
 
         device = next(self.parameters()).device
-        info_dict = {
-            k: (v.to(device) if torch.is_tensor(v) else v)
-            for k, v in info_dict.items()
-        }
+        info_dict = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in info_dict.items()}
 
         goal = {k: v[:, 0] for k, v in info_dict.items() if torch.is_tensor(v)}
         goal["pixels"] = goal["goal"]

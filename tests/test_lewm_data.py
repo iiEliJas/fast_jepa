@@ -110,9 +110,7 @@ def test_random_split_matches_sample_level_semantics(tmp_path):
     assert [len(s) for s in splits] == [9, 3]
     assert sorted(i for s in splits for i in s.indices) == list(range(len(ds)))
 
-    again = random_split(
-        ds, [0.75, 0.25], generator=torch.Generator().manual_seed(0)
-    )
+    again = random_split(ds, [0.75, 0.25], generator=torch.Generator().manual_seed(0))
     assert [s.indices for s in splits] == [s.indices for s in again]
 
 
@@ -121,9 +119,7 @@ def test_split_by_episode_keeps_episodes_whole(tmp_path):
     _write_episodes(path, lengths=(6, 6, 6, 6))
     ds = EpisodeDataset(path, num_steps=2, frameskip=2)
 
-    train, val = split_by_episode(
-        ds, [0.5, 0.5], generator=torch.Generator().manual_seed(0)
-    )
+    train, val = split_by_episode(ds, [0.5, 0.5], generator=torch.Generator().manual_seed(0))
     train_eps = {ds.clips[i][0] for i in train.indices}
     val_eps = {ds.clips[i][0] for i in val.indices}
     assert not (train_eps & val_eps)

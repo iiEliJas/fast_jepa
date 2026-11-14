@@ -128,8 +128,6 @@ def test_train_smoke(tmp_path):
     assert any(r["type"] == "eval" for r in records)
     assert records[-1]["type"] == "done"
 
-    checkpoint = torch.load(
-        tmp_path / "run" / "last.pt", map_location="cpu", weights_only=False
-    )
+    checkpoint = torch.load(tmp_path / "run" / "last.pt", map_location="cpu", weights_only=False)
     assert checkpoint["step"] == 2
     assert any(key.startswith("encoder.") for key in checkpoint["model"])

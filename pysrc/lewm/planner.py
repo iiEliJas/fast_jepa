@@ -99,8 +99,7 @@ class CEMSolver:
                 f"init_action batch {init_action.shape[0]} != n_envs {n_envs}"
             )
             assert init_action.shape[2] == self.action_dim, (
-                f"init_action action_dim {init_action.shape[2]} != "
-                f"{self.action_dim}"
+                f"init_action action_dim {init_action.shape[2]} != {self.action_dim}"
             )
             init_action = init_action.to(device)
 
@@ -121,9 +120,7 @@ class CEMSolver:
         device = cfg.device
         total_envs = len(next(iter(info_dict.values())))
 
-        init_action = self._prepare_init_action(
-            info_dict, init_action, total_envs, device
-        )
+        init_action = self._prepare_init_action(info_dict, init_action, total_envs, device)
         mean, var = self.init_action_distrib(total_envs, init_action)
         mean = mean.to(device)
         var = var.to(device)
@@ -167,24 +164,15 @@ class CEMSolver:
                 candidates[:, 0] = batch_mean
 
                 costs = self.cost.get_cost(expanded, candidates)
-                assert isinstance(costs, torch.Tensor), (
-                    f"expected a tensor cost, got {type(costs)}"
-                )
+                assert isinstance(costs, torch.Tensor), f"expected a tensor cost, got {type(costs)}"
                 assert costs.ndim == 2 and costs.shape == (
                     current_bs,
                     cfg.num_samples,
-                ), (
-                    f"expected cost shape {(current_bs, cfg.num_samples)}, "
-                    f"got {tuple(costs.shape)}"
-                )
+                ), f"expected cost shape {(current_bs, cfg.num_samples)}, got {tuple(costs.shape)}"
 
-                topk_vals, topk_inds = torch.topk(
-                    costs, k=cfg.topk, dim=1, largest=False
-                )
+                topk_vals, topk_inds = torch.topk(costs, k=cfg.topk, dim=1, largest=False)
                 batch_indices = (
-                    torch.arange(current_bs, device=device)
-                    .unsqueeze(1)
-                    .expand(-1, cfg.topk)
+                    torch.arange(current_bs, device=device).unsqueeze(1).expand(-1, cfg.topk)
                 )
                 topk_candidates = candidates[batch_indices, topk_inds]
 

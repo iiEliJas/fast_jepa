@@ -50,8 +50,7 @@ class ViTPatchEmbeddings(nn.Module):
     def forward(self, pixel_values):
         if pixel_values.shape[1] != self.num_channels:
             raise ValueError(
-                f"expected {self.num_channels} image channels, "
-                f"got {pixel_values.shape[1]}"
+                f"expected {self.num_channels} image channels, got {pixel_values.shape[1]}"
             )
         return self.projection(pixel_values).flatten(2).transpose(1, 2)
 
@@ -104,9 +103,7 @@ class ViTEmbeddings(nn.Module):
         embeddings = torch.cat((cls_tokens, embeddings), dim=1)
 
         if interpolate_pos_encoding:
-            embeddings = embeddings + self.interpolate_pos_encoding(
-                embeddings, height, width
-            )
+            embeddings = embeddings + self.interpolate_pos_encoding(embeddings, height, width)
         else:
             if height != self.image_size[0] or width != self.image_size[1]:
                 raise ValueError(
@@ -143,9 +140,7 @@ class ViTSelfAttention(nn.Module):
         # At least FP32 softmax (the reference always upcasts to FP32). Keep
         # FP64 intact so finite-difference gradchecks are meaningful.
         softmax_dtype = (
-            torch.float32
-            if weights.dtype in (torch.float16, torch.bfloat16)
-            else weights.dtype
+            torch.float32 if weights.dtype in (torch.float16, torch.bfloat16) else weights.dtype
         )
         weights = F.softmax(weights, dim=-1, dtype=softmax_dtype).to(q.dtype)
         out = torch.matmul(weights, v).transpose(1, 2).reshape(batch, seq, -1)
@@ -280,9 +275,7 @@ class ViTEncoder(nn.Module):
             elif isinstance(module, nn.LayerNorm):
                 module.weight.data.fill_(1.0)
                 module.bias.data.zero_()
-        nn.init.trunc_normal_(
-            self.embeddings.cls_token, mean=0.0, std=self.initializer_range
-        )
+        nn.init.trunc_normal_(self.embeddings.cls_token, mean=0.0, std=self.initializer_range)
         nn.init.trunc_normal_(
             self.embeddings.position_embeddings,
             mean=0.0,
