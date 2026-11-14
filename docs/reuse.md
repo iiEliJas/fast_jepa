@@ -11,6 +11,7 @@ ones that must pass in this project before a reused component is accepted.
 | Fast BLT (owner) | `~/projects/fast_BLT` | `72deb5cd749bae0fba2625210f0841c7eaae77c8` (`v1.0.1-34-g72deb5c`) | Apache-2.0 | source of build conventions, core/ops patterns, harnesses, selected implementations |
 | Official LeJEPA | `~/projects/lejepa` | `c293d291ca87cd4fddee9d3fffe4e914c7272052` | CC BY-NC 4.0 (LICENSE file; `pyproject.toml` says MIT, LICENSE wins) | external parity and benchmark reference only |
 | LeJEPA paper | `~/projects/paper/LeJEPA_PAPER.md` | — | paper | math and recipe reference |
+| Official LeWM | `~/projects/le-wm` | `8edfeb336732b5f3ce7b8b210d0ba370a09e2cac` | MIT | external parity reference; closely ported into `pysrc/lewm/` with attribution |
 | Python reference env | project `.venv` | — | — | PyTorch `2.15.0+cu132`, CUDA `13.2`, timm `1.0.30` |
 
 Path correction: this file previously named `~/projects/fBLT` as the owner
@@ -79,7 +80,7 @@ tree; **N/A** = not needed for Track A.
 | GEMM wrappers | `csrc/ops/matmul.h`, `csrc/ops/linalg.cu`, `csrc/ops/linalg_cpu.c` | adapt | add FP16; keep FP32/BF16/FP8; add bias epilogue; keep the existing cuBLAS Sgemm/GemmEx path first and evaluate cuBLASLt only if measured (D1; fBLT's cuBLASLt path is FP8-only); keep row-major `[M,K]@[K,N]`; wrapper that accumulates instead of overwriting; no batched/strided GEMM in first release | ViT/projector shapes vs PyTorch; bias; fwd/bwd gradcheck; FP16/BF16 tolerance |
 | Attention fwd/bwd | `csrc/ops/attn_core.h`, `csrc/ops/attn_core.cu`, `csrc/ops/attn_core_cpu.c`, `csrc/models/attention.c` | adapt | full bidirectional (`mask=NULL`, `is_causal=0`); batch/head wrapper; ViT head dim 64, T=65/257, H=3/6; FP32 first then optional FP16/BF16; keep naive and optional flash; no dropout | fwd/bwd vs PyTorch SDPA with fused attention off; flash vs naive; non-contiguous QKV views; head-dim 64 |
 | FFN fwd/bwd | `csrc/ops/swiglu.h`, `csrc/ops/elementwise.h/.cu/_cpu.c` | adapt | fBLT has SwiGLU, not GELU-MLP; reuse elementwise infrastructure, rewrite exact `erf` GELU + bias + residual + dropout; tanh GELU only as config option | exact GELU vs `nn.GELU(approximate='none')`; MLP fwd/bwd; bias/residual |
-| Normalization | `csrc/ops/layernorm.h`, `csrc/ops/reductions_cpu.c`, `csrc/ops/reductions.cu`, `csrc/ops/rmsnorm.h` | adapt | LayerNorm fwd exists (biased variance, eps in sqrt); **backward is `BLT_FATAL`** — write it; affine weight+bias; support flattened `[rows,d]`; keep RMSNorm for Track B/C, not ViT | LN fwd/bwd vs PyTorch, eps 1e-6, gradcheck; RMSNorm only if used later |
+| Normalization | `csrc/ops/layernorm.h`, `csrc/ops/reductions_cpu.c`, `csrc/ops/reductions.cu`, `csrc/ops/rmsnorm.h` | adapt | LayerNorm fwd exists (biased variance, eps in sqrt); **backward is `BLT_FATAL`** — write it; affine weight+bias; support flattened `[rows,d]`; keep RMSNorm for Track B and LeWM, not ViT | LN fwd/bwd vs PyTorch, eps 1e-6, gradcheck; RMSNorm only if used later |
 | Optimizer, schedules, clipping, loss scaling | `csrc/ops/optim.h/.cu/_cpu.c`, `csrc/train_optim.h/.c`, `csrc/train_schedule.h/.c`, `csrc/train_diag.c` | adapt | keep per-tensor AdamW math; add parameter groups (encoder+projector, probe); decay-all parity mode; FP16 dynamic scaler; grad clip default off; per-step warmup+cosine; keep grad/update/component norm diagnostics | one step vs PyTorch; group lr/wd; scheduler lr grid exact; resume state; FP16 overflow skip |
 | Checkpointing, JSONL logging, config parsing | `csrc/models/checkpoint.h/.c`, `csrc/models/param_visitor.h/.c`, `csrc/core/json.h/.c`, `csrc/train_blt_d.c` | adapt | FJEP container with dtype + metadata; PyTorch `state_dict` converter; stable param order; optimizer/scheduler/RNG state; JSON config + CLI overrides; pysrc `kind` log schema and `run.json` | save/load round-trip bitwise; PyTorch ↔ FJEP conversion; resume parity; log schema validation |
 | Multi-GPU NCCL | none at audit | N/A | fBLT is single-GPU/single-process; defer until after A7 | none for Track A |
@@ -123,9 +124,9 @@ tree; **N/A** = not needed for Track A.
 | Counter RNG (Philox) | A1/A5 | rewrite | counter-based design in plan 2.5 | reproducibility across launch shapes, distribution |
 | CUDA event timer | A1/bench | rewrite | `bench/harness.py` | vs torch events |
 | Global debug sync/NaN scan | A1 | rewrite | fBLT diagnostic style | broken-launch/NaN test |
-| AdaLN-zero blocks | Track C | rewrite | LeWM | later |
-| CEM/MPPI planner | Track C | rewrite | LeWM | later |
-| HDF5 trajectory loader | Track C | rewrite | LeWM | later |
+| AdaLN-zero blocks | LeWM | rewrite | LeWM | later |
+| CEM/MPPI planner | LeWM | rewrite | LeWM | later |
+| HDF5 trajectory loader | LeWM | rewrite | LeWM | later |
 
 ### 3.4 Do not reuse
 
@@ -193,3 +194,51 @@ it passes FastJEPA shapes and dtypes.
 - The path discrepancy is resolved (`~/projects/fast_BLT`).
 - D7 mechanism and directory names are recorded in `docs/conventions.md`.
 - No code was added. A1 is the first implementation work package.
+
+## 7. LeWM reuse
+
+Status: added 2026-11-14. Reference checkout `~/projects/le-wm` @
+`8edfeb336732b5f3ce7b8b210d0ba370a09e2cac`, MIT (`LICENSE` checked).
+
+**Decision: direct in-tree adaptation, attribution in file docstrings.**
+
+`jepa.py`, `module.py` and the CEM update rule are ported into `pysrc/lewm/`
+and kept numerically and key-compatible with the reference, because the
+released Push-T checkpoint must load with `strict=True`. The official checkout
+is not vendored and is used only by the parity tests; `stable-worldmodel`,
+`stable-pretraining`, Lightning and Hydra stay out of the runtime dependency
+set.
+
+| Component | Reference source | Decision | Changes | Tests |
+|---|---|---|---|---|
+| Encoder | HF `ViTModel` created by `stable_pretraining` `vit_hf` | rewrite (explicit) | explicit ViT-tiny/patch14 with transformers **4.x** parameter names; CLS output; bicubic position interpolation for non-224 inputs; SDPA replaced by explicit eager attention; FP16/BF16 softmax stays FP32, FP64 stays FP64 | `test_lewm_modules.py::test_encoder_matches_huggingface`, checkpoint strict load |
+| SIGReg | `module.SIGReg` | reuse | subclass of `lejepa.sigreg.SlicedEppsPulley`; same buffers and statistic; shared direction matrix supported for tests | `test_sigreg_parity` (value and input gradient are bit-identical) |
+| Predictor, AdaLN block, attention, FFN, embedder, MLP | `module.py` | reuse/adapt | same parameter names and double-LayerNorm quirk; `num_frames` exposed as an attribute; FP64 preserved for gradcheck | `test_predictor_parity`, `test_embedder_parity`, `test_mlp_parity` |
+| JEPA forward, loss, rollout, cost | `jepa.py`, `train.py` | adapt | non-mutating `encode`/`rollout`; robust goal-embedding broadcast in `criterion`; same terminal-sum cost | `test_lewm_model.py` (forward, loss, rollout, cost, checkpoint) |
+| CEM solver | `stable_worldmodel/planning/solver/cem.py` | adapt | explicit `horizon`/`action_dim` instead of gym `configure()`; no callbacks, no logging in the solver; identical sampling, elite update and candidate-0 mean forcing | `test_lewm_planner.py` (literal reference transcription) |
+| HDF5 clip dataset | `stable_worldmodel/data/dataset.py` | rewrite | contiguous-episode fast path; exact `frameskip` windowing and action reshape; worker-safe HDF5 reopen | `test_lewm_data.py` |
+| Trainer | `train.py` + `lewm.yaml` | rewrite | per-optimizer-step warmup+cosine, JSONL diagnostics, checkpoint with optimizer and SIGReg state | `test_lewm_train.py` |
+
+Deliberate deviations from the pinned code:
+
+1. **Explicit ViT instead of `transformers`.** The checkpoint uses 4.x module
+   names; transformers 5 renamed them. The explicit encoder avoids a runtime
+   dependency and is the specification for the future CUDA encoder. Numerics
+   agree with transformers 5.x to `2e-6` (SDPA vs eager attention).
+2. **FP64 is not downcast.** The reference casts pixels and action inputs to
+   float32. We keep float64 so the protocol's finite-difference gradcheck
+   covers the full model. FP32/BF16 behaviour is unchanged.
+3. **`criterion` accepts batched and unbatched goal embeddings.** The pinned
+   implementation assumes `(B, S, T, D)` and errors on the `(B, T, D)` shape
+   produced by its own `get_cost` with the current world wrapper. Our version
+   keeps the same terminal-sum-of-squares cost and broadcasts `(B, D)` /
+   `(B, T, D)` correctly.
+4. **Planner API.** `CEMSolver` takes `horizon` and `action_dim` directly and
+   has no gymnasium/callback dependency. The numerical update is unchanged.
+5. **Dataset indexing rejects non-contiguous episodes** instead of silently
+   reading the wrong rows.
+
+Validation: `.venv/bin/python -m pytest tests/test_lewm_*.py -q` (23 tests)
+and the full suite (58 tests) pass on CPU. CUDA execution, dataset training
+and planner success rates are still to be measured on the owner's 4060; see
+`docs/experiments/003_lewm_parity.md`.

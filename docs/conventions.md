@@ -69,7 +69,7 @@ csrc/
              param registry
   data/      packed dataset reader, sampler, augmentation, replay
   train/     training loop, scheduler, metrics, diagnostics, probe loop
-  planner/   Track C only
+  planner/   LeWM only
   main.c     CLI
 tests/
   test_helpers.h/.c, test_main.c, test_suite.h
@@ -177,7 +177,7 @@ Rules:
 | Elementwise | `ops/elementwise.h/.cu/_cpu.c` | add/mul/scale/scaled_copy, FP32 only | adapt: dtype support, bias/residual add, dropout mask |
 | GELU | `ops/gelu.h`, `elementwise_cpu.c` | tanh approximation only, fwd/bwd | rewrite exact `erf` GELU; keep tanh as config option |
 | LayerNorm | `ops/layernorm.h`, `reductions_cpu.c`, `reductions.cu` | 2-D FP32 forward only; biased variance; eps >= 1e-12; **backward calls `BLT_FATAL`** | adapt fwd; write backward; affine weight+bias; support flattened rows |
-| RMSNorm | `ops/rmsnorm.h`, reductions | fwd/bwd/add-bwd | keep for Track B/C; not used by ViT |
+| RMSNorm | `ops/rmsnorm.h`, reductions | fwd/bwd/add-bwd | keep for Track B and LeWM; not used by ViT |
 | Softmax | `ops/softmax.h`, reductions | last-dim FP32 fwd/bwd | reuse/adapt |
 | Cross-entropy | `ops/cross_entropy.h`, reductions | 2-D logits, UINT8 targets, mean over rows; fwd/bwd | adapt: INT32 labels for the probe; keep FP32 stats |
 | Optimizer | `ops/optim.h/.cu/_cpu.c`, `train_optim.h/.c` | per-tensor SGD/AdamW; decoupled weight decay; selective norm decay default; grad clip | adapt: per-parameter-group lr/wd, decay-all parity mode, FP16 scaler |

@@ -7,7 +7,7 @@ def make_sigreg(in_dim, num_slices=256, t_max=3.0, n_knots=17):
 
 
 class SlicedEppsPulley(nn.Module):
-    def __init__(self, in_dim, num_slices=256, t_max=3.0, n_knots=17):
+    def __init__(self, in_dim=None, num_slices=256, t_max=3.0, n_knots=17):
         super().__init__()
         assert n_knots % 2 == 1
         self.in_dim = in_dim
@@ -30,7 +30,7 @@ class SlicedEppsPulley(nn.Module):
         elif x.dim() != 3:
             raise ValueError(f"expected 2D or 3D input, got shape {tuple(x.shape)}")
         V, N, K = x.shape
-        if K != self.in_dim:
+        if self.in_dim is not None and K != self.in_dim:
             raise ValueError(f"expected in_dim={self.in_dim}, got K={K}")
         if N == 0:
             raise ValueError("SIGReg needs at least one sample per view")
